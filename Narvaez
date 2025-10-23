@@ -1,0 +1,40 @@
+import deriv_api
+import time
+import pandas as pd
+
+# Configuración de la API
+api_key = "tu_api_key"
+app_id = "tu_app_id"
+
+# Conectar a la API
+api = deriv_api.DerivAPI(api_key, app_id)
+
+# Definir la estrategia de trading
+def estrategia(symbol, timeframe):
+    # Obtener datos históricos
+    data = api.get_historical_data(symbol, timeframe)
+    df = pd.DataFrame(data)
+    
+    # Calcular medias móviles
+    df['media_rapida'] = df['close'].rolling(window=20).mean()
+    df['media_lenta'] = df['close'].rolling(window=50).mean()
+    
+    # Tomar decisiones
+    if df['media_rapida'].iloc[-1] > df['media_lenta'].iloc[-1]:
+        # Comprar
+        api.buy_contract(symbol, 10, "rise")
+    else:
+        # Vender
+        api.sell_contract(symbol, 10, "fall")
+
+# Configurar el símbolo y el timeframe
+symbol = "R_100"
+timeframe = 60  # 1 minuto
+
+# Ejecutar la estrategia cada minuto
+while True:
+    try:
+        estrategia(symbol, timeframe)
+        time.sleep(60)
+    except Exception as e:
+        print(f"Error: {e}")
